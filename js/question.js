@@ -1,0 +1,88 @@
+import { questions, quiz, questionsContainer } from "./index.js";
+
+export default class Question {
+  constructor(index) {
+    this.index = index;
+    this.category = questions[index].category;
+    this.difficulty = questions[index].difficulty;
+    this.question = questions[index].question;
+    this.wrongAnswers = questions[index].incorrect_answers;
+    this.answer = questions[index].correct_answer;
+    this.allAnswers = this.getChoicesReady();
+    this.answered = false;
+  };
+
+  getChoicesReady() {
+    return this.wrongAnswers.concat(this.answer).sort();
+  };
+
+  displayQuestion() {
+    const questionMarkUp = `
+        <div
+          class="question shadow-lg col-lg-6 offset-lg-3  p-4 rounded-3 d-flex flex-column justify-content-center align-items-center gap-3 animate__animated animate__bounceIn"
+        >
+          <div class="w-100 d-flex justify-content-between">
+            <span class="btn btn-category">${this.category}</span>
+            <span class="fs-6 btn btn-questions">${this.index + 1} of ${questions.length
+      } Questions</span>
+          </div>
+          <h2 class="text-capitalize h4 text-center">${this.question}</h2>  
+          <ul class="choices w-100 list-unstyled m-0 d-flex flex-wrap text-center">
+          ${this.allAnswers.map((choice) => `<li>${choice}</li>`).join("")}
+          </ul>
+          <h2 class="text-capitalize text-center score-color h3 fw-bold"><i class="bi bi-emoji-laughing"></i> Score: ${quiz.score
+      } </h2>        
+        </div>
+      `;
+
+    questionsContainer.innerHTML = questionMarkUp;
+    // console.log(this.answer);
+    const allAnswers = document.querySelectorAll(".question ul li");
+
+    for (let i = 0; i < allAnswers.length; i++) {
+      allAnswers[i].addEventListener("click", (e) => {
+        this.checkAnswer(e);
+      });
+
+    }
+  };
+
+  checkAnswer(e) {
+    if (!this.answered) {
+      this.answered = true;
+      if (e.target.innerHTML.toLowerCase() == this.answer.toLowerCase()) {
+        e.target.classList.add("correct", "animate__animated", "animate__flipInY");
+        ++quiz.score;
+      } else {
+        e.target.classList.add("wrong", "animate__animated", "animate__shakeX");
+      }
+
+      this.animateQuestion(e.target, 2000);
+    }
+  }
+
+  animateQuestion(element, duration) {
+    setTimeout(() => {
+      element.closest(".question").classList.replace("animate__bounceIn", "animate__backOutLeft");
+      setTimeout(() => {
+        this.nextQuestion();
+      }, 500);
+    }, duration);
+  }
+
+  nextQuestion() {
+    ++this.index;
+    if (this.index > questions.length - 1) {
+      // console.log("Game Over ❌");
+      questionsContainer.innerHTML = quiz.endQuiz();
+      const tryAgainBtn = document.querySelector(".again");
+      tryAgainBtn.addEventListener("click", function () {
+        location.reload();
+      });
+      return;
+    }
+
+    const x = new Question(this.index);
+    x.displayQuestion();
+  }
+}
